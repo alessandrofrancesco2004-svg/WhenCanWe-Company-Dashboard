@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WhenCanWe — Command Center</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>◉</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --black:#0A0A0B; --surface:#111114; --card:#17171C; --card-hover:#1E1E25;
+  --border:rgba(255,255,255,0.08); --border-active:rgba(155,143,240,0.35);
+  --purple:#9B8FF0; --purple-light:#C4BCFF; --purple-dim:rgba(155,143,240,0.12);
+  --white:#FAFAFA; --muted:rgba(250,250,250,0.40); --muted2:rgba(250,250,250,0.22);
+  --red:#E06060; --green:#6ECF8E; --amber:#E0B860; --blue:#60B0E0; --orange:#E08060;
+  --font:'DM Sans',sans-serif; --mono:'DM Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--font);background:var(--black);color:var(--white);height:100vh;overflow:hidden;}
+#app{display:flex;height:100vh;overflow:hidden;}
+
+/* NAV */
+.nav{width:220px;flex-shrink:0;background:var(--surface);border-right:0.5px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;}
+.nav-logo{padding:22px 22px 20px;border-bottom:0.5px solid var(--border);}
+.logo-stack{display:flex;flex-direction:column;line-height:1.05;font-size:16px;font-weight:600;letter-spacing:-0.025em;margin-bottom:6px;}
+.logo-w{color:var(--white)}.logo-c{color:var(--purple)}
+.nav-sub{font-size:10px;color:var(--muted2);font-family:var(--mono);}
+.nav-sections{padding:14px 0;flex:1;}
+.nav-label{font-size:9px;font-weight:500;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted2);padding:0 22px;margin-bottom:10px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 22px;font-size:12px;font-weight:400;color:var(--muted);cursor:pointer;transition:all .12s;border-right:2px solid transparent;}
+.nav-item:hover{background:rgba(255,255,255,0.03);}
+.nav-item.active{font-weight:500;color:var(--white);background:var(--purple-dim);border-right-color:var(--purple);}
+.nav-item .icon{font-size:12px;opacity:0.5;}.nav-item.active .icon{opacity:1;}
+.nav-item .audience{margin-left:auto;font-size:9px;font-family:var(--mono);color:var(--muted2);}
+.nav-footer{padding:12px 22px;border-top:0.5px solid var(--border);display:flex;flex-direction:column;gap:8px;}
+.sync-badge{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--green);}
+.reset-btn{display:flex;align-items:center;gap:5px;padding:6px 0;font-size:10px;font-family:var(--font);font-weight:500;background:none;border:none;color:var(--muted2);cursor:pointer;text-align:left;}
+.reset-btn:hover{color:var(--red);}
+
+/* MAIN */
+.main{flex:1;overflow-y:auto;padding:28px 36px;}
+.breadcrumb{display:flex;align-items:center;gap:8px;margin-bottom:24px;font-size:11px;color:var(--muted);}
+.breadcrumb .crumb{font-weight:500;color:var(--muted2);}.breadcrumb .active-crumb{font-weight:500;color:var(--purple);}
+.for-badge{margin-left:auto;font-size:10px;font-family:var(--mono);color:var(--muted2);background:var(--card);padding:4px 10px;border-radius:6px;border:0.5px solid var(--border);}
+
+/* SHARED */
+.stats-row{display:flex;gap:10px;margin-bottom:22px;}
+.stat-box{flex:1;background:var(--card);border-radius:10px;padding:12px 16px;border:0.5px solid var(--border);}
+.stat-num{font-size:22px;font-weight:600;letter-spacing:-0.03em;}
+.stat-label{font-size:9px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-top:3px;}
+.section-head{font-size:9px;font-weight:500;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);margin-bottom:16px;display:flex;align-items:center;gap:10px;}
+.section-line{flex:1;height:0.5px;background:var(--border);}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:6px;font-size:10px;font-weight:500;}
+.chip{padding:5px 13px;font-size:10.5px;font-weight:500;border-radius:7px;cursor:pointer;font-family:var(--font);transition:all .12s;border:1px solid var(--border);background:transparent;color:var(--muted);}
+.chip.on{border-color:var(--purple);background:rgba(155,143,240,0.1);color:var(--purple);}
+.form-label{font-size:9px;font-weight:500;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted2);margin-bottom:6px;display:block;}
+.form-input{width:100%;background:var(--card);border:0.5px solid var(--border);border-radius:9px;padding:9px 13px;font-size:13px;font-weight:500;font-family:var(--font);color:var(--white);outline:none;margin-bottom:14px;}
+.form-textarea{width:100%;background:var(--card);border:0.5px solid var(--border);border-radius:9px;padding:10px 13px;font-size:12.5px;font-family:var(--font);color:rgba(250,250,250,0.85);outline:none;margin-bottom:14px;line-height:1.7;resize:vertical;min-height:100px;}
+.btn-primary{width:100%;padding:11px;background:var(--purple);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;font-family:var(--font);cursor:pointer;margin-top:6px;}
+.btn-primary:hover{filter:brightness(1.1);}
+.btn-danger{width:100%;padding:9px;background:transparent;color:var(--red);border:1px solid rgba(224,96,96,0.2);border-radius:10px;font-size:11.5px;font-weight:500;font-family:var(--font);cursor:pointer;margin-top:6px;}
+.btn-add{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;font-size:12px;font-weight:500;font-family:var(--font);background:var(--purple);color:#fff;border:none;border-radius:9px;cursor:pointer;}
+.btn-add:hover{filter:brightness(1.1);}
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:50px 20px;text-align:center;}
+.empty-icon{font-size:28px;color:var(--purple);margin-bottom:12px;opacity:0.45;}
+.empty-text{font-size:12.5px;color:var(--muted);line-height:1.7;max-width:300px;}
+
+/* TOOLBAR */
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
+.search-box{display:flex;align-items:center;gap:7px;background:var(--card);border:0.5px solid var(--border);border-radius:9px;padding:6px 12px;flex:1;min-width:180px;max-width:280px;}
+.search-box input{background:transparent;border:none;outline:none;color:var(--white);font-size:12px;font-family:var(--font);flex:1;}
+.view-toggle{display:flex;gap:3px;background:var(--card);border-radius:7px;padding:2.5px;border:0.5px solid var(--border);}
+.view-btn{padding:4px 12px;font-size:10.5px;font-weight:500;font-family:var(--font);border-radius:5px;border:none;cursor:pointer;background:transparent;color:var(--muted);}
+.view-btn.on{background:var(--purple);color:#fff;}
+
+/* CARDS */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;}
+.idea-card{background:var(--card);border:0.5px solid var(--border);border-radius:13px;padding:16px 18px 14px;cursor:pointer;transition:all .15s;position:relative;}
+.idea-card:hover{background:var(--card-hover);transform:translateY(-1px);}
+.idea-card.pinned{border-color:var(--border-active);}
+.card-title{font-size:13px;font-weight:600;letter-spacing:-0.01em;margin-bottom:6px;line-height:1.35;}
+.card-body{font-size:11.5px;line-height:1.6;color:rgba(250,250,250,0.55);margin-bottom:12px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+.card-footer{display:flex;align-items:center;justify-content:space-between;font-size:10px;color:var(--muted);font-family:var(--mono);}
+.pin-icon{position:absolute;top:9px;right:11px;color:var(--purple);opacity:0.5;font-size:10px;}
+.conn-count{display:inline-flex;align-items:center;gap:3px;color:var(--purple);font-size:10px;}
+
+/* KANBAN */
+.kanban{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;align-items:start;}
+.kanban-col{background:var(--surface);border-radius:13px;border:0.5px solid var(--border);padding:13px 11px;min-height:200px;}
+.kanban-head{display:flex;align-items:center;gap:7px;margin-bottom:12px;padding:0 3px;}
+.kanban-title{font-size:10px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);}
+.kanban-count{margin-left:auto;font-size:10px;font-family:var(--mono);color:var(--muted2);}
+.kanban-card{background:var(--card);border:0.5px solid var(--border);border-radius:9px;padding:10px 12px;margin-bottom:7px;cursor:pointer;transition:all .12s;}
+.kanban-card:hover{background:var(--card-hover);}
+.kanban-card-title{font-size:11.5px;font-weight:500;margin-bottom:3px;line-height:1.35;}
+.kanban-card-sub{font-size:10px;color:var(--muted);font-family:var(--mono);}
+
+/* TABLE */
+.data-table{background:var(--card);border-radius:13px;border:0.5px solid var(--border);overflow:hidden;}
+.table-header{display:grid;padding:10px 18px;border-bottom:0.5px solid var(--border);font-size:9px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted2);}
+.table-row{display:grid;padding:12px 18px;border-bottom:0.5px solid var(--border);cursor:pointer;transition:all .12s;align-items:center;}
+.table-row:hover{background:var(--card-hover);}
+.table-footer{display:grid;padding:12px 18px;font-size:12px;font-weight:600;border-top:1px solid var(--border-active);}
+.dev-cols{grid-template-columns:2fr 1.2fr 0.8fr 0.8fr 0.8fr;}
+.item-name{font-size:12.5px;font-weight:500;}.item-notes{font-size:10.5px;color:var(--muted);margin-top:2px;line-height:1.4;}
+
+/* SWOT */
+.swot-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.swot-quad{background:var(--card);border-radius:14px;border:0.5px solid var(--border);padding:18px 20px;min-height:180px;}
+.swot-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.swot-icon{font-size:22px;font-weight:700;opacity:0.6;}
+.swot-add{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;font-size:10px;font-family:var(--font);font-weight:500;border-radius:6px;cursor:pointer;border:1px solid;}
+.swot-item{display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--border);cursor:pointer;}
+.swot-dot{width:5px;height:5px;border-radius:50%;margin-top:5px;flex-shrink:0;opacity:0.5;}
+.swot-text{font-size:12px;color:rgba(250,250,250,0.7);line-height:1.55;}
+
+/* STRUGGLES */
+.struggle-card{display:flex;align-items:flex-start;gap:12px;background:var(--card);border:0.5px solid var(--border);border-radius:12px;padding:14px 18px;cursor:pointer;transition:all .12s;}
+.struggle-card:hover{background:var(--card-hover);}
+.check-box{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--border);background:transparent;cursor:pointer;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:10px;}
+.check-box.done{border-color:var(--green);background:rgba(110,207,142,0.13);color:var(--green);}
+.resolved-item{display:flex;align-items:center;gap:12px;background:var(--card);border:0.5px solid var(--border);border-radius:10px;padding:10px 16px;opacity:0.5;}
+.resolved-item .title{font-size:12px;color:var(--muted);text-decoration:line-through;}
+
+/* SALES */
+.sales-card{background:var(--card);border:0.5px solid var(--border);border-radius:13px;padding:16px 18px 14px;cursor:pointer;transition:all .15s;}
+.sales-card:hover{background:var(--card-hover);transform:translateY(-1px);}
+
+/* OVERVIEW PANELS */
+.overview-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;}
+.overview-panel{background:var(--card);border-radius:14px;border:0.5px solid var(--border);padding:18px 20px;}
+.overview-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:0.5px solid var(--border);font-size:12px;}
+.overview-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.overview-title{flex:1;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.swot-mini{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.swot-mini-card{background:var(--card);border-radius:12px;border:0.5px solid var(--border);padding:14px 16px;}
+.swot-mini-icon{font-size:20px;font-weight:700;margin-bottom:4px;opacity:0.7;}
+.swot-mini-label{font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;font-weight:500;}
+.swot-mini-item{font-size:11px;color:rgba(250,250,250,0.65);padding:4px 0;line-height:1.5;}
+.swot-mini-more{font-size:10px;color:var(--muted2);margin-top:4px;}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.72);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:300;padding:20px;}
+.modal{background:var(--surface);border:0.5px solid var(--border);border-radius:16px;width:100%;max-width:600px;max-height:85vh;overflow-y:auto;padding:26px 28px;position:relative;}
+.modal-close{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;}
+.modal-type{font-size:10px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:16px;}
+.chip-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+.conn-tag{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;font-size:10px;font-weight:500;cursor:pointer;transition:all .12s;font-family:var(--font);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border:1px solid var(--border);background:var(--card);color:var(--muted);}
+.conn-tag.on{background:rgba(155,143,240,0.13);border-color:var(--purple);color:var(--purple-light);}
+
+/* CONFIRM */
+.confirm-content{text-align:center;padding:10px 0;}
+.confirm-icon{font-size:28px;margin-bottom:12px;}
+.confirm-title{font-size:14px;font-weight:600;margin-bottom:6px;}
+.confirm-text{font-size:12px;color:var(--muted);margin-bottom:20px;line-height:1.6;}
+.confirm-btns{display:flex;gap:10px;}
+.confirm-cancel{flex:1;padding:10px;background:var(--card);border:0.5px solid var(--border);border-radius:9px;color:var(--white);font-size:12px;font-weight:500;font-family:var(--font);cursor:pointer;}
+.confirm-danger{flex:1;padding:10px;background:var(--red);border:none;border-radius:9px;color:#fff;font-size:12px;font-weight:600;font-family:var(--font);cursor:pointer;}
+
+/* LOADING */
+.loading{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;min-height:100vh;width:100%;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.spinner{animation:spin 1s linear infinite;display:inline-flex;}
+
+/* STATUS DOT */
+.status-dot{width:6px;height:6px;border-radius:50%;display:inline-block;}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  .nav{width:180px;}
+  .main{padding:20px 24px;}
+  .kanban{grid-template-columns:repeat(2,1fr);}
+  .swot-grid{grid-template-columns:1fr;}
+  .swot-mini{grid-template-columns:repeat(2,1fr);}
+  .overview-grid{grid-template-columns:1fr;}
+  .stats-row{flex-wrap:wrap;}
+  .stat-box{min-width:120px;}
+}
+@media(max-width:640px){
+  #app{flex-direction:column;}
+  .nav{width:100%;flex-direction:row;overflow-x:auto;border-right:none;border-bottom:0.5px solid var(--border);}
+  .nav-logo,.nav-footer{display:none;}
+  .nav-sections{padding:0;display:flex;flex-direction:row;}
+  .nav-label{display:none;}
+  .nav-item{padding:12px 16px;border-right:none;border-bottom:2px solid transparent;white-space:nowrap;}
+  .nav-item.active{border-bottom-color:var(--purple);border-right:none;}
+  .nav-item .audience{display:none;}
+  .dev-cols{grid-template-columns:1.5fr 1fr 0.7fr;}
+}
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script>
+/* ═══════════════════════════════════════════
+   DATA & STATE
+   ═══════════════════════════════════════════ */
+const uid = () => Math.random().toString(36).slice(2,9);
+
+const TABS = [
+  {id:"overview",label:"Overview",icon:"◉",audience:"Everyone"},
+  {id:"marketing",label:"Marketing Lab",icon:"✦",audience:"Marketing"},
+  {id:"dev",label:"Dev & Costs",icon:"⌘",audience:"Engineer"},
+  {id:"swot",label:"SWOT",icon:"◈",audience:"Strategy"},
+  {id:"struggles",label:"Struggles",icon:"⚡",audience:"Everyone"},
+  {id:"sales",label:"Sales Playbook",icon:"▶",audience:"Seller"},
+];
+const CATEGORIES = [
+  {id:"social",label:"Social",color:"#9B8FF0"},
+  {id:"content",label:"Content",color:"#6ECF8E"},
+  {id:"growth",label:"Growth",color:"#E0B860"},
+  {id:"brand",label:"Brand",color:"#E06060"},
+  {id:"launch",label:"Launch",color:"#60B0E0"},
+  {id:"collab",label:"Collab",color:"#E08060"},
+];
+const STATUSES = [
+  {id:"spark",label:"Spark",icon:"✦",color:"#C4BCFF"},
+  {id:"developing",label:"Developing",icon:"◐",color:"#E0B860"},
+  {id:"ready",label:"Ready",icon:"●",color:"#6ECF8E"},
+  {id:"live",label:"Live",icon:"▲",color:"#9B8FF0"},
+];
+const PRIORITIES = [
+  {id:"low",label:"Low",color:"rgba(250,250,250,0.4)"},
+  {id:"medium",label:"Medium",color:"#E0B860"},
+  {id:"high",label:"High",color:"#E08060"},
+  {id:"critical",label:"Critical",color:"#E06060"},
+];
+
+const SEED = {
+  ideas:[
+    {id:"i1",title:'"When Can We... stop missing out?"',body:"Social campaign series showing real FOMO moments — missed dinners, cancelled plans. Each post ends with WCW solving it.",category:"social",status:"spark",connections:["i2"],pinned:false,created:Date.now()-86400000},
+    {id:"i2",title:"Micro-influencer seeding",body:'Partner with 20-30 micro-influencers in the "friend group coordinator" space. Authentic > polished.',category:"growth",status:"developing",connections:["i1"],pinned:false,created:Date.now()-72000000},
+    {id:"i3",title:"Launch video — 30s manifesto",body:'"We built this for the group chat." Dark, kinetic typography, purple accents.',category:"launch",status:"spark",connections:[],pinned:true,created:Date.now()-50000000},
+  ],
+  devItems:[
+    {id:"d1",item:"React Native app (iOS + Android)",estimate:"€12,000 – €18,000",hours:"400–600h",priority:"critical",status:"developing",notes:"Core scheduling engine, push notifications, deep links"},
+    {id:"d2",item:"Backend API & infrastructure",estimate:"€8,000 – €12,000",hours:"280–400h",priority:"critical",status:"developing",notes:"Auth, real-time sync, calendar integrations"},
+    {id:"d3",item:"Landing page & marketing site",estimate:"€2,000 – €3,500",hours:"60–100h",priority:"high",status:"spark",notes:"Framer or Next.js, waitlist signup"},
+    {id:"d4",item:"Design system & brand assets",estimate:"€1,500 – €2,500",hours:"50–80h",priority:"high",status:"ready",notes:"Figma components, icon set, motion guidelines"},
+    {id:"d5",item:"Analytics & monitoring",estimate:"€1,000 – €2,000",hours:"30–60h",priority:"medium",status:"spark",notes:"Mixpanel/Amplitude, crash reporting"},
+    {id:"d6",item:"QA & testing",estimate:"€2,000 – €3,000",hours:"80–120h",priority:"high",status:"spark",notes:"Unit tests, E2E, device testing matrix"},
+  ],
+  swot:{
+    strengths:[{id:"s1",text:"Dead-simple UX — fewer taps than any competitor"},{id:"s2",text:"Strong brand identity (dark-first, purple, young)"},{id:"s3",text:"Built for friend groups, not corporate teams"},{id:"s4",text:"No sign-up required for invitees"}],
+    weaknesses:[{id:"w1",text:"No revenue model defined yet"},{id:"w2",text:"Small team — limited bandwidth"},{id:"w3",text:"No existing user base to bootstrap from"}],
+    opportunities:[{id:"o1",text:"Gen-Z scheduling fatigue — huge underserved market"},{id:"o2",text:"WhatsApp/iMessage integration potential"},{id:"o3",text:"University campus ambassador programs"},{id:"o4",text:"Event planning expansion (weddings, trips)"}],
+    threats:[{id:"t1",text:"When2meet, Doodle, Calendly brand awareness"},{id:"t2",text:"Apple/Google could ship native group scheduling"},{id:"t3",text:"User habit inertia — group chats 'work'"}],
+  },
+  struggles:[
+    {id:"st1",title:"Cold start problem",body:"App is useless until your friends are on it. Need viral invite loop.",priority:"critical",resolved:false},
+    {id:"st2",title:"Revenue model unclear",body:"Freemium? Premium? Ads kill the vibe.",priority:"high",resolved:false},
+    {id:"st3",title:"Calendar API limitations",body:"Google rate limits, Apple CalDAV is painful.",priority:"high",resolved:false},
+    {id:"st4",title:"Notification fatigue",body:"Too many nudges = muted. Too few = dead events.",priority:"medium",resolved:false},
+  ],
+  sales:[
+    {id:"sl1",title:"Pitch deck — Investor version",body:"Problem → Solution → Market → Traction → Team → Ask. 12 slides max.",status:"developing",audience:"Investors"},
+    {id:"sl2",title:"B2B angle — small teams",body:"Anti-Calendly for teams under 20. Free for groups under 10.",status:"spark",audience:"Small business"},
+    {id:"sl3",title:"University partnerships",body:"Free premium to student orgs. Target clubs, sports teams, greek life.",status:"spark",audience:"Students"},
+    {id:"sl4",title:"Value props one-pager",body:"3 problems, how we differ from Doodle/When2meet, one CTA.",status:"ready",audience:"General"},
+  ],
+};
+
+// State
+let state = {
+  tab: "overview",
+  ideas: [], devItems: [], swot: {strengths:[],weaknesses:[],opportunities:[],threats:[]}, struggles: [], sales: [],
+  view: "grid", search: "", filterCat: "all",
+  modal: null, // null | {type, data}
+  showReset: false,
+};
+
+function loadData() {
+  try {
+    const saved = localStorage.getItem("wcw-data");
+    if (saved) {
+      const d = JSON.parse(saved);
+      state.ideas = d.ideas || SEED.ideas;
+      state.devItems = d.devItems || SEED.devItems;
+      state.swot = d.swot || SEED.swot;
+      state.struggles = d.struggles || SEED.struggles;
+      state.sales = d.sales || SEED.sales;
+    } else {
+      state.ideas = [...SEED.ideas];
+      state.devItems = [...SEED.devItems];
+      state.swot = JSON.parse(JSON.stringify(SEED.swot));
+      state.struggles = [...SEED.struggles];
+      state.sales = [...SEED.sales];
+      saveData();
+    }
+  } catch(e) {
+    state.ideas = [...SEED.ideas];
+    state.devItems = [...SEED.devItems];
+    state.swot = JSON.parse(JSON.stringify(SEED.swot));
+    state.struggles = [...SEED.struggles];
+    state.sales = [...SEED.sales];
+  }
+}
+
+function saveData() {
+  try {
+    localStorage.setItem("wcw-data", JSON.stringify({
+      ideas: state.ideas, devItems: state.devItems, swot: state.swot, struggles: state.struggles, sales: state.sales
+    }));
+  } catch(e) { console.error("Save error:", e); }
+}
+
+function resetAll() {
+  state.ideas = JSON.parse(JSON.stringify(SEED.ideas));
+  state.devItems = JSON.parse(JSON.stringify(SEED.devItems));
+  state.swot = JSON.parse(JSON.stringify(SEED.swot));
+  state.struggles = JSON.parse(JSON.stringify(SEED.struggles));
+  state.sales = JSON.parse(JSON.stringify(SEED.sales));
+  state.showReset = false;
+  saveData();
+  render();
+}
+
+/* ═══════════════════════════════════════════
+   HELPERS
+   ═══════════════════════════════════════════ */
+function h(tag, attrs, ...children) {
+  const el = document.createElement(tag);
+  if (attrs) Object.entries(attrs).forEach(([k,v]) => {
+    if (k === "style" && typeof v === "object") Object.assign(el.style, v);
+    else if (k.startsWith("on")) el.addEventListener(k.slice(2).toLowerCase(), v);
+    else if (k === "className") el.className = v;
+    else if (k === "innerHTML") el.innerHTML = v;
+    else el.setAttribute(k, v);
+  });
+  children.flat(Infinity).forEach(c => {
+    if (c == null) return;
+    el.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+  });
+  return el;
+}
+
+function badge(text, color) {
+  return h("span", {className:"badge", style:{background:`${color}1A`,color:color}}, text);
+}
+
+function statusDot(statusId) {
+  const s = STATUSES.find(x=>x.id===statusId);
+  return h("span", {className:"status-dot", style:{background:s?.color||"#888"}});
+}
+
+function getCat(id) { return CATEGORIES.find(c=>c.id===id) || CATEGORIES[0]; }
+function getStatus(id) { return STATUSES.find(s=>s.id===id) || STATUSES[0]; }
+function getPriority(id) { return PRIORITIES.find(p=>p.id===id) || PRIORITIES[0]; }
+
+function parseLow(est) { const m=est.match(/€([\d,]+)/); return m?parseInt(m[1].replace(/,/g,"")):0; }
+function parseHigh(est) { const m=est.match(/€[\d,]+\s*[–-]\s*€?([\d,]+)/); return m?parseInt(m[1].replace(/,/g,"")):0; }
+
+/* ═══════════════════════════════════════════
+   MODAL
+   ═══════════════════════════════════════════ */
+function showModal(content) {
+  const overlay = h("div", {className:"overlay", onClick:()=>{closeModal();}});
+  const modal = h("div", {className:"modal", onClick:e=>e.stopPropagation()},
+    h("button", {className:"modal-close", onClick:()=>closeModal()}, "✕"),
+    content
+  );
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+}
+
+function closeModal() {
+  const o = document.querySelector(".overlay");
+  if(o) o.remove();
+}
+
+/* ═══════════════════════════════════════════
+   IDEA FORM
+   ═══════════════════════════════════════════ */
+function openIdeaForm(idea) {
+  const isNew = !idea;
+  const f = {
+    id: idea?.id || uid(),
+    title: idea?.title || "",
+    body: idea?.body || "",
+    category: idea?.category || "social",
+    status: idea?.status || "spark",
+    connections: idea?.connections ? [...idea.connections] : [],
+    pinned: idea?.pinned || false,
+    created: idea?.created || Date.now(),
+  };
+
+  const content = h("div", {},
+    h("div", {className:"modal-type", style:{color:"#9B8FF0"}}, isNew ? "✦ New idea" : "◐ Edit idea"),
+    h("label", {className:"form-label"}, "Title"),
+    h("input", {className:"form-input", style:{fontSize:"14px",fontWeight:"600"}, placeholder:"What's the big idea?", value:f.title, onInput:e=>{f.title=e.target.value;}}),
+    h("label", {className:"form-label"}, "Details"),
+    h("textarea", {className:"form-textarea", placeholder:"Strategy, copy, references — everything.", onInput:e=>{f.body=e.target.value;}}, f.body),
+    h("label", {className:"form-label"}, "Category"),
+    buildChips(CATEGORIES, f.category, id=>{f.category=id;}, "color"),
+    h("label", {className:"form-label"}, "Status"),
+    buildChips(STATUSES.map(s=>({...s,label:s.icon+" "+s.label})), f.status, id=>{f.status=id;}),
+    h("div", {style:{display:"flex",alignItems:"center",gap:"10px",marginBottom:"14px"}},
+      h("label", {className:"form-label", style:{margin:0}}, "Pinned"),
+      h("button", {className:"chip"+(f.pinned?" on":""), onClick:e=>{f.pinned=!f.pinned; e.target.className="chip"+(f.pinned?" on":""); e.target.textContent=f.pinned?"Yes":"No";}}, f.pinned?"Yes":"No")
+    ),
+    buildConnections(f, state.ideas.filter(i=>i.id!==f.id)),
+    h("button", {className:"btn-primary", onClick:()=>{
+      if(!f.title.trim()) return;
+      const ex = state.ideas.find(i=>i.id===f.id);
+      if(ex) { state.ideas = state.ideas.map(i=>i.id===f.id?{...f}:i); }
+      else { state.ideas.unshift({...f}); }
+      // sync connections
+      state.ideas = state.ideas.map(i=>{
+        if(i.id===f.id) return i;
+        const should = f.connections.includes(i.id);
+        const is = i.connections.includes(f.id);
+        if(should&&!is) return {...i, connections:[...i.connections,f.id]};
+        if(!should&&is) return {...i, connections:i.connections.filter(c=>c!==f.id)};
+        return i;
+      });
+      saveData(); closeModal(); render();
+    }}, isNew ? "Add to board" : "Save changes"),
+    !isNew ? h("button", {className:"btn-danger", onClick:()=>{
+      state.ideas = state.ideas.filter(i=>i.id!==f.id).map(i=>({...i,connections:i.connections.filter(c=>c!==f.id)}));
+      saveData(); closeModal(); render();
+    }}, "Delete idea") : null
+  );
+  showModal(content);
+}
+
+function buildChips(items, active, onChange, colorKey) {
+  const row = h("div", {className:"chip-row"});
+  items.forEach(item => {
+    const clr = colorKey ? item[colorKey] : "#9B8FF0";
+    const btn = h("button", {
+      className: "chip"+(active===item.id?" on":""),
+      style: active===item.id ? {borderColor:clr,background:clr+"1A",color:clr} : {},
+      onClick: () => {
+        onChange(item.id);
+        row.querySelectorAll(".chip").forEach(b=>{b.className="chip"; b.style.borderColor=""; b.style.background=""; b.style.color="";});
+        btn.className="chip on";
+        btn.style.borderColor=clr; btn.style.background=clr+"1A"; btn.style.color=clr;
+      }
+    }, item.label);
+    row.appendChild(btn);
+  });
+  return row;
+}
+
+function buildConnections(f, others) {
+  if(others.length===0) return h("span");
+  const wrap = h("div", {});
+  wrap.appendChild(h("label", {className:"form-label"}, "Connect to"));
+  const row = h("div", {className:"chip-row"});
+  others.forEach(o => {
+    const on = f.connections.includes(o.id);
+    const btn = h("button", {
+      className:"conn-tag"+(on?" on":""),
+      onClick:()=>{
+        if(f.connections.includes(o.id)) f.connections=f.connections.filter(c=>c!==o.id);
+        else f.connections.push(o.id);
+        btn.className="conn-tag"+(f.connections.includes(o.id)?" on":"");
+      }
+    }, (on?"🔗 ":"+ ")+o.title);
+    row.appendChild(btn);
+  });
+  wrap.appendChild(row);
+  return wrap;
+}
+
+/* ═══════════════════════════════════════════
+   DEV FORM
+   ═══════════════════════════════════════════ */
+function openDevForm(item) {
+  const isNew = !item;
+  const f = {id:item?.id||uid(), item:item?.item||"", estimate:item?.estimate||"", hours:item?.hours||"", priority:item?.priority||"medium", status:item?.status||"spark", notes:item?.notes||""};
+  const content = h("div", {},
+    h("div", {className:"modal-type", style:{color:"#60B0E0"}}, isNew?"⌘ New item":"⌘ Edit item"),
+    h("label", {className:"form-label"}, "Item name"),
+    h("input", {className:"form-input", placeholder:"e.g. React Native app", value:f.item, onInput:e=>{f.item=e.target.value;}}),
+    h("div", {style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}},
+      h("div", {}, h("label",{className:"form-label"},"Cost estimate"), h("input",{className:"form-input",placeholder:"€5,000 – €8,000",value:f.estimate,onInput:e=>{f.estimate=e.target.value;}})),
+      h("div", {}, h("label",{className:"form-label"},"Hours"), h("input",{className:"form-input",placeholder:"100–200h",value:f.hours,onInput:e=>{f.hours=e.target.value;}}))
+    ),
+    h("label",{className:"form-label"},"Priority"),
+    buildChips(PRIORITIES, f.priority, id=>{f.priority=id;}, "color"),
+    h("label",{className:"form-label"},"Status"),
+    buildChips(STATUSES.map(s=>({...s,label:s.icon+" "+s.label})), f.status, id=>{f.status=id;}),
+    h("label",{className:"form-label"},"Notes"),
+    h("textarea",{className:"form-textarea",placeholder:"Tech details, dependencies…",onInput:e=>{f.notes=e.target.value;}}, f.notes),
+    h("button",{className:"btn-primary",onClick:()=>{
+      if(!f.item.trim()) return;
+      const ex=state.devItems.find(i=>i.id===f.id);
+      if(ex) state.devItems=state.devItems.map(i=>i.id===f.id?{...f}:i);
+      else state.devItems.push({...f});
+      saveData(); closeModal(); render();
+    }}, isNew?"Add item":"Save changes"),
+    !isNew ? h("button",{className:"btn-danger",onClick:()=>{state.devItems=state.devItems.filter(i=>i.id!==f.id);saveData();closeModal();render();}}, "Delete") : null
+  );
+  showModal(content);
+}
+
+/* ═══════════════════════════════════════════
+   SWOT FORM
+   ═══════════════════════════════════════════ */
+function openSwotForm(quadrant, item) {
+  const isNew = !item;
+  const f = {id:item?.id||uid(), text:item?.text||""};
+  const qColors = {strengths:"#6ECF8E",weaknesses:"#E06060",opportunities:"#60B0E0",threats:"#E0B860"};
+  const content = h("div", {},
+    h("div",{className:"modal-type",style:{color:qColors[quadrant]}}, (isNew?"New":"Edit")+" — "+quadrant.charAt(0).toUpperCase()+quadrant.slice(1)),
+    h("textarea",{className:"form-textarea",style:{minHeight:"80px"},placeholder:"Describe…",onInput:e=>{f.text=e.target.value;}}, f.text),
+    h("button",{className:"btn-primary",onClick:()=>{
+      if(!f.text.trim()) return;
+      if(isNew) state.swot[quadrant].push({...f});
+      else state.swot[quadrant]=state.swot[quadrant].map(i=>i.id===f.id?{...f}:i);
+      saveData(); closeModal(); render();
+    }}, isNew?"Add":"Save"),
+    !isNew ? h("button",{className:"btn-danger",onClick:()=>{state.swot[quadrant]=state.swot[quadrant].filter(i=>i.id!==f.id);saveData();closeModal();render();}}, "Delete") : null
+  );
+  showModal(content);
+}
+
+/* ═══════════════════════════════════════════
+   STRUGGLE FORM
+   ═══════════════════════════════════════════ */
+function openStruggleForm(item) {
+  const isNew = !item;
+  const f = {id:item?.id||uid(), title:item?.title||"", body:item?.body||"", priority:item?.priority||"medium", resolved:item?.resolved||false};
+  const content = h("div", {},
+    h("div",{className:"modal-type",style:{color:"#E06060"}}, isNew?"⚡ New struggle":"⚡ Edit struggle"),
+    h("label",{className:"form-label"},"Title"),
+    h("input",{className:"form-input",placeholder:"What's blocking you?",value:f.title,onInput:e=>{f.title=e.target.value;}}),
+    h("label",{className:"form-label"},"Details"),
+    h("textarea",{className:"form-textarea",placeholder:"Context, impact, potential solutions…",onInput:e=>{f.body=e.target.value;}}, f.body),
+    h("label",{className:"form-label"},"Priority"),
+    buildChips(PRIORITIES, f.priority, id=>{f.priority=id;}, "color"),
+    h("button",{className:"btn-primary",onClick:()=>{
+      if(!f.title.trim()) return;
+      const ex=state.struggles.find(i=>i.id===f.id);
+      if(ex) state.struggles=state.struggles.map(i=>i.id===f.id?{...f}:i);
+      else state.struggles.push({...f});
+      saveData(); closeModal(); render();
+    }}, isNew?"Add":"Save"),
+    !isNew ? h("button",{className:"btn-danger",onClick:()=>{state.struggles=state.struggles.filter(i=>i.id!==f.id);saveData();closeModal();render();}}, "Delete") : null
+  );
+  showModal(content);
+}
+
+/* ═══════════════════════════════════════════
+   SALES FORM
+   ═══════════════════════════════════════════ */
+function openSalesForm(item) {
+  const isNew = !item;
+  const f = {id:item?.id||uid(), title:item?.title||"", body:item?.body||"", status:item?.status||"spark", audience:item?.audience||"General"};
+  const audiences = ["Investors","Small business","Students","Enterprise","General"];
+  const content = h("div", {},
+    h("div",{className:"modal-type",style:{color:"#60B0E0"}}, isNew?"▶ New sales item":"▶ Edit sales item"),
+    h("label",{className:"form-label"},"Title"),
+    h("input",{className:"form-input",placeholder:"e.g. Investor pitch deck",value:f.title,onInput:e=>{f.title=e.target.value;}}),
+    h("label",{className:"form-label"},"Details"),
+    h("textarea",{className:"form-textarea",placeholder:"Strategy, key messages…",onInput:e=>{f.body=e.target.value;}}, f.body),
+    h("label",{className:"form-label"},"Audience"),
+    buildChips(audiences.map(a=>({id:a,label:a,color:"#60B0E0"})), f.audience, id=>{f.audience=id;}, "color"),
+    h("label",{className:"form-label"},"Status"),
+    buildChips(STATUSES.map(s=>({...s,label:s.icon+" "+s.label})), f.status, id=>{f.status=id;}),
+    h("button",{className:"btn-primary",onClick:()=>{
+      if(!f.title.trim()) return;
+      const ex=state.sales.find(i=>i.id===f.id);
+      if(ex) state.sales=state.sales.map(i=>i.id===f.id?{...f}:i);
+      else state.sales.push({...f});
+      saveData(); closeModal(); render();
+    }}, isNew?"Add":"Save"),
+    !isNew ? h("button",{className:"btn-danger",onClick:()=>{state.sales=state.sales.filter(i=>i.id!==f.id);saveData();closeModal();render();}}, "Delete") : null
+  );
+  showModal(content);
+}
+
+/* ═══════════════════════════════════════════
+   RENDERERS
+   ═══════════════════════════════════════════ */
+function renderOverview() {
+  const totalLow = state.devItems.reduce((a,d)=>a+parseLow(d.estimate),0);
+  const resolved = state.struggles.filter(s=>s.resolved).length;
+
+  return h("div",{},
+    h("div",{style:{marginBottom:"28px"}},
+      h("div",{style:{fontSize:"24px",fontWeight:"600",letterSpacing:"-0.03em",marginBottom:"4px"},innerHTML:'When<span style="color:#9B8FF0">Can</span>We'}),
+      h("div",{style:{fontSize:"13px",color:"rgba(250,250,250,0.4)",lineHeight:"1.6"}},"Brand command center — your single source of truth.")
+    ),
+    h("div",{className:"stats-row"},
+      statBox(state.ideas.length,"Marketing Ideas","#9B8FF0"),
+      statBox(state.devItems.length,"Dev Line Items","#60B0E0"),
+      statBox("€"+(totalLow/1000).toFixed(0)+"k+","Est. Dev Cost","#E0B860"),
+      statBox(state.swot.strengths.length+state.swot.opportunities.length,"S + O","#6ECF8E"),
+      statBox(resolved+"/"+state.struggles.length,"Struggles Fixed",resolved===state.struggles.length?"#6ECF8E":"#E06060")
+    ),
+    h("div",{className:"overview-grid"},
+      renderOverviewPanel("✦","Marketing snapshot",state.ideas.slice(0,4).map(i=>{
+        const cat=getCat(i.category); return {dot:cat.color,title:i.title,badge:getStatus(i.status)};
+      })),
+      renderOverviewPanel("⚡","Active struggles",state.struggles.filter(s=>!s.resolved).slice(0,4).map(s=>{
+        const pr=getPriority(s.priority); return {dot:pr.color,title:s.title,badge:{label:s.priority,color:pr.color}};
+      }))
+    ),
+    renderSwotMini()
+  );
+}
+
+function statBox(value,label,color) {
+  return h("div",{className:"stat-box"},
+    h("div",{className:"stat-num",style:{color:color||"#FAFAFA"}}, ""+value),
+    h("div",{className:"stat-label"}, label)
+  );
+}
+
+function renderOverviewPanel(icon,title,rows) {
+  const panel = h("div",{className:"overview-panel"},
+    h("div",{className:"section-head"}, h("span",{},icon), " "+title+" ", h("div",{className:"section-line"}))
+  );
+  if(rows.length===0) panel.appendChild(h("div",{style:{fontSize:"11px",color:"rgba(250,250,250,0.22)",padding:"12px 0"}},"Nothing yet"));
+  rows.forEach(r=>{
+    panel.appendChild(h("div",{className:"overview-row"},
+      h("span",{className:"overview-dot",style:{background:r.dot}}),
+      h("span",{className:"overview-title"},r.title),
+      badge(r.badge.label||r.badge,r.badge.color||"#9B8FF0")
+    ));
+  });
+  return panel;
+}
+
+function renderSwotMini() {
+  const quads=[
+    {key:"strengths",label:"Strengths",color:"#6ECF8E",icon:"S"},
+    {key:"weaknesses",label:"Weaknesses",color:"#E06060",icon:"W"},
+    {key:"opportunities",label:"Opportunities",color:"#60B0E0",icon:"O"},
+    {key:"threats",label:"Threats",color:"#E0B860",icon:"T"},
+  ];
+  const grid = h("div",{className:"swot-mini"});
+  quads.forEach(q=>{
+    const card = h("div",{className:"swot-mini-card",style:{borderTop:"2px solid "+q.color+"44"}},
+      h("div",{className:"swot-mini-icon",style:{color:q.color}},q.icon),
+      h("div",{className:"swot-mini-label"},q.label)
+    );
+    state.swot[q.key].slice(0,3).forEach(item=>{
+      card.appendChild(h("div",{className:"swot-mini-item"},"• "+item.text));
+    });
+    if(state.swot[q.key].length>3) card.appendChild(h("div",{className:"swot-mini-more"},"+"+( state.swot[q.key].length-3)+" more"));
+    grid.appendChild(card);
+  });
+  return grid;
+}
+
+/* ─── Marketing ─── */
+function renderMarketing() {
+  let filtered = state.ideas.filter(i=>{
+    const ms = !state.search || i.title.toLowerCase().includes(state.search.toLowerCase()) || i.body.toLowerCase().includes(state.search.toLowerCase());
+    const mc = state.filterCat==="all" || i.category===state.filterCat;
+    return ms && mc;
+  }).sort((a,b)=>(a.pinned&&!b.pinned?-1:!a.pinned&&b.pinned?1:b.created-a.created));
+
+  const toolbar = h("div",{className:"toolbar"},
+    h("div",{className:"search-box"},
+      h("span",{style:{color:"rgba(250,250,250,0.4)"}},"🔍"),
+      h("input",{placeholder:"Search ideas…",value:state.search,onInput:e=>{state.search=e.target.value;render();}})
+    )
+  );
+  // category filters
+  const cats = h("div",{style:{display:"flex",gap:"4px",flexWrap:"wrap"}});
+  [{id:"all",label:"All",color:"#9B8FF0"},...CATEGORIES].forEach(c=>{
+    cats.appendChild(h("button",{className:"chip"+(state.filterCat===c.id?" on":""),
+      style:state.filterCat===c.id?{borderColor:c.color,background:c.color+"1A",color:c.color}:{},
+      onClick:()=>{state.filterCat=c.id;render();}}, c.label));
+  });
+  toolbar.appendChild(cats);
+  // view toggle
+  const vt = h("div",{className:"view-toggle",style:{marginLeft:"auto"}},
+    h("button",{className:"view-btn"+(state.view==="grid"?" on":""),onClick:()=>{state.view="grid";render();}},"Grid"),
+    h("button",{className:"view-btn"+(state.view==="kanban"?" on":""),onClick:()=>{state.view="kanban";render();}},"Kanban")
+  );
+  toolbar.appendChild(vt);
+  toolbar.appendChild(h("button",{className:"btn-add",onClick:()=>openIdeaForm()}, "+ New idea"));
+
+  const wrap = h("div",{}, toolbar,
+    h("div",{className:"stats-row"},
+      statBox(state.ideas.length,"Total ideas"),
+      statBox(Math.round(state.ideas.reduce((a,i)=>a+i.connections.length,0)/2),"Connections","#9B8FF0"),
+      statBox(state.ideas.filter(i=>i.status==="ready"||i.status==="live").length,"Ready / Live","#6ECF8E")
+    )
+  );
+
+  if(filtered.length===0) {
+    wrap.appendChild(h("div",{className:"empty"},
+      h("div",{className:"empty-icon"},"✦"),
+      h("div",{className:"empty-text"},"No ideas yet."),
+      h("button",{className:"btn-primary",style:{width:"auto",padding:"9px 24px",marginTop:"16px",fontSize:"12px"},onClick:()=>openIdeaForm()},"Add first idea")
+    ));
+  } else if(state.view==="grid") {
+    const grid = h("div",{className:"card-grid"});
+    filtered.forEach(idea=>{
+      const cat=getCat(idea.category), st=getStatus(idea.status);
+      const card = h("div",{className:"idea-card"+(idea.pinned?" pinned":""),style:{borderTop:"2px solid "+cat.color+"44"},onClick:()=>openIdeaForm(idea)},
+        idea.pinned ? h("span",{className:"pin-icon"},"📌") : null,
+        h("div",{className:"card-title"},idea.title),
+        h("div",{className:"card-body"},idea.body),
+        h("div",{className:"card-footer"},
+          h("div",{style:{display:"flex",gap:"7px",alignItems:"center"}},
+            badge(cat.label,cat.color),
+            h("span",{style:{display:"flex",alignItems:"center",gap:"3px"}}, statusDot(idea.status), " "+st.label)
+          ),
+          idea.connections.length>0 ? h("span",{className:"conn-count"},"🔗 "+idea.connections.length) : null
+        )
+      );
+      grid.appendChild(card);
+    });
+    wrap.appendChild(grid);
+  } else {
+    const kanban = h("div",{className:"kanban"});
+    STATUSES.forEach(s=>{
+      const items=filtered.filter(i=>i.status===s.id);
+      const col = h("div",{className:"kanban-col"},
+        h("div",{className:"kanban-head"},
+          h("span",{style:{fontSize:"13px"}},s.icon),
+          h("span",{className:"kanban-title"},s.label),
+          h("span",{className:"kanban-count"},""+items.length)
+        )
+      );
+      items.forEach(idea=>{
+        const cat=getCat(idea.category);
+        col.appendChild(h("div",{className:"kanban-card",style:{borderLeft:"2.5px solid "+cat.color+"55"},onClick:()=>openIdeaForm(idea)},
+          h("div",{className:"kanban-card-title"},idea.title),
+          h("div",{className:"kanban-card-sub"},h("span",{style:{color:cat.color}},cat.label))
+        ));
+      });
+      kanban.appendChild(col);
+    });
+    wrap.appendChild(kanban);
+  }
+  return wrap;
+}
+
+/* ─── Dev ─── */
+function renderDev() {
+  const totalLow=state.devItems.reduce((a,d)=>a+parseLow(d.estimate),0);
+  const totalHigh=state.devItems.reduce((a,d)=>a+parseHigh(d.estimate),0);
+  const wrap = h("div",{},
+    h("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"20px"}},
+      h("div",{},
+        h("div",{style:{fontSize:"16px",fontWeight:"600"}},"Development Costs"),
+        h("div",{style:{fontSize:"12px",color:"rgba(250,250,250,0.4)",marginTop:"2px"}},"Track every line item")
+      ),
+      h("button",{className:"btn-add",onClick:()=>openDevForm()}, "+ Add item")
+    ),
+    h("div",{className:"stats-row"},
+      statBox("€"+(totalLow/1000).toFixed(0)+"k","Low estimate","#6ECF8E"),
+      statBox("€"+(totalHigh/1000).toFixed(0)+"k","High estimate","#E0B860"),
+      statBox(state.devItems.length,"Line items"),
+      statBox(state.devItems.filter(i=>i.priority==="critical").length,"Critical","#E06060")
+    )
+  );
+  const table = h("div",{className:"data-table"},
+    h("div",{className:"table-header dev-cols"},
+      h("span",{},"Item"),h("span",{},"Estimate"),h("span",{},"Hours"),h("span",{},"Priority"),h("span",{},"Status")
+    )
+  );
+  state.devItems.forEach(item=>{
+    const pr=getPriority(item.priority), st=getStatus(item.status);
+    table.appendChild(h("div",{className:"table-row dev-cols",onClick:()=>openDevForm(item)},
+      h("div",{}, h("div",{className:"item-name"},item.item), item.notes?h("div",{className:"item-notes"},item.notes):null),
+      h("span",{style:{fontSize:"12px",fontFamily:"var(--mono)",color:"#6ECF8E"}},item.estimate),
+      h("span",{style:{fontSize:"11px",fontFamily:"var(--mono)",color:"rgba(250,250,250,0.4)"}},item.hours),
+      badge(item.priority,pr.color),
+      h("span",{style:{display:"flex",alignItems:"center",gap:"4px",fontSize:"10.5px"}}, statusDot(item.status), " "+st.label)
+    ));
+  });
+  table.appendChild(h("div",{className:"table-footer dev-cols"},
+    h("span",{},"Total"),
+    h("span",{style:{fontFamily:"var(--mono)",color:"#E0B860"}},"€"+totalLow.toLocaleString()+" – €"+totalHigh.toLocaleString())
+  ));
+  wrap.appendChild(table);
+  return wrap;
+}
+
+/* ─── SWOT ─── */
+function renderSwot() {
+  const quads=[
+    {key:"strengths",label:"Strengths",color:"#6ECF8E",icon:"S",desc:"Internal advantages"},
+    {key:"weaknesses",label:"Weaknesses",color:"#E06060",icon:"W",desc:"Internal limitations"},
+    {key:"opportunities",label:"Opportunities",color:"#60B0E0",icon:"O",desc:"External potential"},
+    {key:"threats",label:"Threats",color:"#E0B860",icon:"T",desc:"External risks"},
+  ];
+  const wrap = h("div",{},
+    h("div",{style:{fontSize:"16px",fontWeight:"600",marginBottom:"4px"}},"SWOT Analysis"),
+    h("div",{style:{fontSize:"12px",color:"rgba(250,250,250,0.4)",marginBottom:"22px"}},"Strategic positioning — editable by everyone")
+  );
+  const grid = h("div",{className:"swot-grid"});
+  quads.forEach(q=>{
+    const quad = h("div",{className:"swot-quad",style:{borderTop:"2.5px solid "+q.color+"55"}},
+      h("div",{className:"swot-head"},
+        h("div",{style:{display:"flex",alignItems:"center",gap:"10px"}},
+          h("span",{className:"swot-icon",style:{color:q.color}},q.icon),
+          h("div",{}, h("div",{style:{fontSize:"12px",fontWeight:"600"}},q.label), h("div",{style:{fontSize:"10px",color:"rgba(250,250,250,0.22)"}},q.desc))
+        ),
+        h("button",{className:"swot-add",style:{background:q.color+"1A",borderColor:q.color+"33",color:q.color},onClick:()=>openSwotForm(q.key)}, "+ Add")
+      )
+    );
+    state.swot[q.key].forEach(item=>{
+      quad.appendChild(h("div",{className:"swot-item",onClick:()=>openSwotForm(q.key,item)},
+        h("span",{className:"swot-dot",style:{background:q.color}}),
+        h("span",{className:"swot-text"},item.text)
+      ));
+    });
+    grid.appendChild(quad);
+  });
+  wrap.appendChild(grid);
+  return wrap;
+}
+
+/* ─── Struggles ─── */
+function renderStruggles() {
+  const active=state.struggles.filter(s=>!s.resolved);
+  const resolved=state.struggles.filter(s=>s.resolved);
+  const wrap = h("div",{},
+    h("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"20px"}},
+      h("div",{}, h("div",{style:{fontSize:"16px",fontWeight:"600"}},"Struggles & Blockers"), h("div",{style:{fontSize:"12px",color:"rgba(250,250,250,0.4)",marginTop:"2px"}},"Be honest — track what's hard")),
+      h("button",{className:"btn-add",onClick:()=>openStruggleForm()}, "+ Add struggle")
+    ),
+    h("div",{className:"stats-row"},
+      statBox(active.length,"Active","#E06060"),
+      statBox(resolved.length,"Resolved","#6ECF8E"),
+      statBox(state.struggles.filter(s=>s.priority==="critical"&&!s.resolved).length,"Critical open","#E0B860")
+    )
+  );
+  if(active.length>0) {
+    wrap.appendChild(h("div",{className:"section-head"}, h("span",{},"⚡"), " Active ", h("div",{className:"section-line"})));
+    const list = h("div",{style:{display:"flex",flexDirection:"column",gap:"8px",marginBottom:"28px"}});
+    active.forEach(s=>{
+      const pr=getPriority(s.priority);
+      const card = h("div",{className:"struggle-card",style:{borderLeft:"3px solid "+pr.color}},
+        h("button",{className:"check-box",onClick:e=>{e.stopPropagation();state.struggles=state.struggles.map(i=>i.id===s.id?{...i,resolved:!i.resolved}:i);saveData();render();}}),
+        h("div",{style:{flex:"1"},onClick:()=>openStruggleForm(s)},
+          h("div",{style:{display:"flex",alignItems:"center",gap:"8px",marginBottom:"4px"}},
+            h("span",{style:{fontSize:"13px",fontWeight:"600"}},s.title),
+            badge(s.priority,pr.color)
+          ),
+          h("div",{style:{fontSize:"12px",color:"rgba(250,250,250,0.4)",lineHeight:"1.6"}},s.body)
+        )
+      );
+      list.appendChild(card);
+    });
+    wrap.appendChild(list);
+  }
+  if(resolved.length>0) {
+    wrap.appendChild(h("div",{className:"section-head"}, h("span",{style:{color:"#6ECF8E"}},"✓"), " Resolved ", h("div",{className:"section-line"})));
+    const list = h("div",{style:{display:"flex",flexDirection:"column",gap:"6px"}});
+    resolved.forEach(s=>{
+      list.appendChild(h("div",{className:"resolved-item"},
+        h("button",{className:"check-box done",onClick:()=>{state.struggles=state.struggles.map(i=>i.id===s.id?{...i,resolved:false}:i);saveData();render();}},"✓"),
+        h("span",{className:"title"},s.title)
+      ));
+    });
+    wrap.appendChild(list);
+  }
+  if(active.length===0&&resolved.length===0) {
+    wrap.appendChild(h("div",{className:"empty"}, h("div",{className:"empty-icon"},"⚡"), h("div",{className:"empty-text"},"No struggles logged yet."),
+      h("button",{className:"btn-primary",style:{width:"auto",padding:"9px 24px",marginTop:"16px",fontSize:"12px"},onClick:()=>openStruggleForm()},"Add first struggle")));
+  }
+  return wrap;
+}
+
+/* ─── Sales ─── */
+function renderSales() {
+  const wrap = h("div",{},
+    h("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"20px"}},
+      h("div",{}, h("div",{style:{fontSize:"16px",fontWeight:"600"}},"Sales Playbook"), h("div",{style:{fontSize:"12px",color:"rgba(250,250,250,0.4)",marginTop:"2px"}},"Pitches, strategies & collateral")),
+      h("button",{className:"btn-add",onClick:()=>openSalesForm()}, "+ Add item")
+    )
+  );
+  if(state.sales.length===0) {
+    wrap.appendChild(h("div",{className:"empty"}, h("div",{className:"empty-icon"},"▶"), h("div",{className:"empty-text"},"No sales items yet."),
+      h("button",{className:"btn-primary",style:{width:"auto",padding:"9px 24px",marginTop:"16px",fontSize:"12px"},onClick:()=>openSalesForm()},"Add first")));
+  } else {
+    const grid = h("div",{className:"card-grid"});
+    state.sales.forEach(item=>{
+      const st=getStatus(item.status);
+      grid.appendChild(h("div",{className:"sales-card",onClick:()=>openSalesForm(item)},
+        h("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"8px"}},
+          badge(item.audience,"#60B0E0"),
+          h("span",{style:{display:"flex",alignItems:"center",gap:"4px",fontSize:"10px"}}, statusDot(item.status), h("span",{style:{color:"rgba(250,250,250,0.4)"}},st.label))
+        ),
+        h("div",{style:{fontSize:"13px",fontWeight:"600",marginBottom:"6px",lineHeight:"1.35"}},item.title),
+        h("div",{style:{fontSize:"11.5px",lineHeight:"1.6",color:"rgba(250,250,250,0.55)",display:"-webkit-box",WebkitLineClamp:"3",WebkitBoxOrient:"vertical",overflow:"hidden"}},item.body)
+      ));
+    });
+    wrap.appendChild(grid);
+  }
+  return wrap;
+}
+
+
+/* ═══════════════════════════════════════════
+   MAIN RENDER
+   ═══════════════════════════════════════════ */
+function render() {
+  const app = document.getElementById("app");
+  app.innerHTML = "";
+
+  const activeTab = TABS.find(t=>t.id===state.tab);
+
+  // NAV
+  const nav = h("nav",{className:"nav"},
+    h("div",{className:"nav-logo"},
+      h("div",{className:"logo-stack"},
+        h("span",{className:"logo-w"},"When"),
+        h("span",{className:"logo-c"},"Can"),
+        h("span",{className:"logo-w"},"We")
+      ),
+      h("div",{className:"nav-sub"},"Command Center")
+    )
+  );
+  const sections = h("div",{className:"nav-sections"},
+    h("div",{className:"nav-label"},"Sections")
+  );
+  TABS.forEach(t=>{
+    sections.appendChild(h("div",{className:"nav-item"+(state.tab===t.id?" active":""),onClick:()=>{state.tab=t.id;render();}},
+      h("span",{className:"icon"},t.icon),
+      h("span",{},t.label),
+      h("span",{className:"audience"},t.audience)
+    ));
+  });
+  nav.appendChild(sections);
+  nav.appendChild(h("div",{className:"nav-footer"},
+    h("div",{className:"sync-badge"},"● Saved locally"),
+    h("button",{className:"reset-btn",onClick:()=>{state.showReset=true;render();}},"✕ Reset all data"),
+    h("div",{style:{fontSize:"10px",color:"rgba(250,250,250,0.22)",fontFamily:"var(--mono)"}},"v1.0 · May 2026")
+  ));
+  app.appendChild(nav);
+
+  // MAIN
+  const main = h("div",{className:"main"},
+    h("div",{className:"breadcrumb"},
+      h("span",{className:"crumb"},"WCW"),
+      h("span",{style:{opacity:"0.4"}},"›"),
+      h("span",{className:"active-crumb"},activeTab.label),
+      h("span",{className:"for-badge"},"For: "+activeTab.audience)
+    )
+  );
+  if(state.tab==="overview") main.appendChild(renderOverview());
+  else if(state.tab==="marketing") main.appendChild(renderMarketing());
+  else if(state.tab==="dev") main.appendChild(renderDev());
+  else if(state.tab==="swot") main.appendChild(renderSwot());
+  else if(state.tab==="struggles") main.appendChild(renderStruggles());
+  else if(state.tab==="sales") main.appendChild(renderSales());
+  app.appendChild(main);
+
+  // RESET MODAL
+  if(state.showReset) {
+    showModal(h("div",{className:"confirm-content"},
+      h("div",{className:"confirm-icon"},"⚠️"),
+      h("div",{className:"confirm-title"},"Reset all data?"),
+      h("div",{className:"confirm-text"},"This will reset everything back to starter content. Can't be undone."),
+      h("div",{className:"confirm-btns"},
+        h("button",{className:"confirm-cancel",onClick:()=>{state.showReset=false;closeModal();}},"Cancel"),
+        h("button",{className:"confirm-danger",onClick:()=>{resetAll();closeModal();}},"Reset everything")
+      )
+    ));
+  }
+}
+
+// INIT
+loadData();
+render();
+</script>
+</body>
+</html>
